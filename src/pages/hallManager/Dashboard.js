@@ -33,6 +33,9 @@ import {
   Avatar,
   Divider,
   MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -62,6 +65,15 @@ const HallManagerDashboard = () => {
   const [openPriceDialog, setOpenPriceDialog] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState(null);
   const [bookingPrice, setBookingPrice] = useState('');
+  const [openBookingEditDialog, setOpenBookingEditDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [bookingFormData, setBookingFormData] = useState({
+    date: '',
+    eventType: '',
+    guestCount: '',
+    additionalRequirements: ''
+  });
   const [editFormData, setEditFormData] = useState({
     hallName: '',
     hallAddress: '',
@@ -385,6 +397,113 @@ const HallManagerDashboard = () => {
     }
   };
 
+  // handlePriceSubmit moved to avoid duplication
+  
+  const handleEditBooking = (booking) => {
+    setSelectedBooking(booking);
+    setBookingFormData({
+      date: booking.date || '',
+      eventType: booking.eventType || '',
+      guestCount: booking.guestCount || '',
+      additionalRequirements: booking.additionalRequirements || '',
+      serviceType: booking.serviceType || 'hall',
+      status: booking.status || 'pending'
+    });
+    setOpenBookingEditDialog(true);
+  };
+  
+  const handleBookingFormChange = (e) => {
+    const { name, value } = e.target;
+    setBookingFormData({
+      ...bookingFormData,
+      [name]: value,
+    });
+  };
+  
+  const handleBookingEditSubmit = async () => {
+    if (!selectedBooking) return;
+    
+    setLoading(true);
+    try {
+      await updateDoc(doc(db, 'bookings', selectedBooking.id), {
+        date: bookingFormData.date,
+        eventType: bookingFormData.eventType,
+        guestCount: parseInt(bookingFormData.guestCount) || 0,
+        additionalRequirements: bookingFormData.additionalRequirements,
+        serviceType: bookingFormData.serviceType,
+        status: bookingFormData.status,
+        updatedAt: new Date().toISOString(),
+      });
+      
+      // Update local state
+      setBookings(bookings.map(booking => 
+        booking.id === selectedBooking.id ? { 
+          ...booking, 
+          date: bookingFormData.date,
+          eventType: bookingFormData.eventType,
+          guestCount: parseInt(bookingFormData.guestCount) || 0,
+          additionalRequirements: bookingFormData.additionalRequirements,
+          serviceType: bookingFormData.serviceType,
+          status: bookingFormData.status,
+        } : booking
+      ));
+      
+      setSuccess('Booking updated successfully!');
+      setOpenBookingEditDialog(false);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccess('');
+      }, 3000);
+    } catch (error) {
+      console.error('Error updating booking:', error);
+      setError('Failed to update booking. Please try again.');
+      
+      // Clear error message after 3 seconds
+      setTimeout(() => {
+        setError('');
+      }, 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleDeleteBooking = (bookingId) => {
+    setSelectedBookingId(bookingId);
+    setOpenDeleteDialog(true);
+  };
+  
+  const confirmDeleteBooking = async () => {
+    if (!selectedBookingId) return;
+    
+    setLoading(true);
+    try {
+      await deleteDoc(doc(db, 'bookings', selectedBookingId));
+      
+      // Update local state
+      setBookings(bookings.filter(booking => booking.id !== selectedBookingId));
+      
+      setSuccess('Booking deleted successfully!');
+      setOpenDeleteDialog(false);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccess('');
+      }, 3000);
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      setError('Failed to delete booking. Please try again.');
+      
+      // Clear error message after 3 seconds
+      setTimeout(() => {
+        setError('');
+      }, 3000);
+    } finally {
+      setLoading(false);
+      setSelectedBookingId(null);
+    }
+  };
+  
   const handlePriceSubmit = async () => {
     if (!bookingPrice || isNaN(bookingPrice) || parseFloat(bookingPrice) <= 0) {
       setError('Please enter a valid price');
@@ -742,6 +861,7 @@ const HallManagerDashboard = () => {
                   <TableCell>Service Type</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Contact</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -775,6 +895,24 @@ const HallManagerDashboard = () => {
                       {booking.phone}
                       <br />
                       {booking.email}
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <IconButton
+                          color="primary"
+                          size="small"
+                          onClick={() => handleEditBooking(booking)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          color="error"
+                          size="small"
+                          onClick={() => handleDeleteBooking(booking.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1650,8 +1788,101 @@ const HallManagerDashboard = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Edit Booking Dialog */}
+      <Dialog open={openBookingEditDialog} onClose={() => setOpenBookingEditDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Booking</DialogTitle>
+        <DialogContent>
+          <Box component="form" sx={{ mt: 2 }}>
+            <TextField
+              margin="normal"
+              fullWidth
+              label="Date"
+              name="date"
+              type="date"
+              value={bookingFormData.date}
+              onChange={handleBookingFormChange}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              margin="normal"
+              fullWidth
+              label="Event Type"
+              name="eventType"
+              value={bookingFormData.eventType}
+              onChange={handleBookingFormChange}
+            />
+            <TextField
+              margin="normal"
+              fullWidth
+              label="Guest Count"
+              name="guestCount"
+              type="number"
+              value={bookingFormData.guestCount}
+              onChange={handleBookingFormChange}
+            />
+            <TextField
+              margin="normal"
+              fullWidth
+              label="Additional Requirements"
+              name="additionalRequirements"
+              multiline
+              rows={4}
+              value={bookingFormData.additionalRequirements}
+              onChange={handleBookingFormChange}
+            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="service-type-label">Service Type</InputLabel>
+              <Select
+                labelId="service-type-label"
+                name="serviceType"
+                value={bookingFormData.serviceType}
+                label="Service Type"
+                onChange={handleBookingFormChange}
+              >
+                <MenuItem value="hall">Hall Service</MenuItem>
+                <MenuItem value="external">External Service</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="status-label">Status</InputLabel>
+              <Select
+                labelId="status-label"
+                name="status"
+                value={bookingFormData.status}
+                label="Status"
+                onChange={handleBookingFormChange}
+              >
+                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="approved">Approved</MenuItem>
+                <MenuItem value="rejected">Rejected</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenBookingEditDialog(false)}>Cancel</Button>
+          <Button onClick={handleBookingEditSubmit} variant="contained" color="primary" disabled={loading}>
+            {loading ? <CircularProgress size={24} /> : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this booking? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
+          <Button onClick={confirmDeleteBooking} variant="contained" color="error" disabled={loading}>
+            {loading ? <CircularProgress size={24} /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
 
-export default HallManagerDashboard; 
+export default HallManagerDashboard;
