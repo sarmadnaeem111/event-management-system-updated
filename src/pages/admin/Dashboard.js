@@ -404,7 +404,6 @@ const AdminDashboard = () => {
           >
             <Tab label="Pending Service Providers" />
             <Tab label="Pending Hall Managers" />
-            {/* <Tab label="Pending Bookings" /> */}
             <Tab label="All Service Providers" />
             <Tab label="All Hall Managers" />
             <Tab label="All Bookings" />
@@ -514,58 +513,8 @@ const AdminDashboard = () => {
           </TableContainer>
         </TabPanel>
 
-        {/* Pending Bookings */}
-        <TabPanel value={tabValue} index={2}>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Tracking ID</TableCell>
-                  <TableCell>Service Type</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {bookings.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} align="center">
-                      No pending booking requests
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  bookings.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell>{booking.trackingId || "N/A"}</TableCell>
-                      <TableCell>{booking.serviceType || booking.type}</TableCell>
-                      <TableCell>{booking.date}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="contained"
-                          color="success"
-                          onClick={() => handleBookingApproval(booking.id, 'approved')}
-                          sx={{ mr: 1 }}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="error"
-                          onClick={() => handleBookingApproval(booking.id, 'rejected')}
-                        >
-                          Reject
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </TabPanel>
-
         {/* All Service Providers */}
-        <TabPanel value={tabValue} index={3}>
+        <TabPanel value={tabValue} index={2}>
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
@@ -634,8 +583,8 @@ const AdminDashboard = () => {
           </TableContainer>
         </TabPanel>
 
-        {/* All Wedding Hall Managers */}
-        <TabPanel value={tabValue} index={4}>
+        {/* All Hall Managers */}
+        <TabPanel value={tabValue} index={3}>
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
@@ -705,7 +654,7 @@ const AdminDashboard = () => {
         </TabPanel>
 
         {/* All Bookings */}
-        <TabPanel value={tabValue} index={5}>
+        <TabPanel value={tabValue} index={4}>
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
@@ -775,7 +724,7 @@ const AdminDashboard = () => {
         </TabPanel>
 
         {/* Reports */}
-        <TabPanel value={tabValue} index={6}>
+        <TabPanel value={tabValue} index={5}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Generate Reports
@@ -1334,4 +1283,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;
