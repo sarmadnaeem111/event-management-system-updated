@@ -89,6 +89,7 @@ const ServiceBooking = () => {
     return existingBookings.some(
       booking => 
         booking.date === date && 
+        booking.serviceProviderId === providerId &&
         booking.status !== 'rejected'
     );
   };
@@ -395,4 +396,4 @@ const ServiceBooking = () => {
   );
 };
 
-export default ServiceBooking; 
+export default ServiceBooking;
